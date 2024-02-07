@@ -5,6 +5,7 @@ import DashBoard from './page/DashBoard';
 
 import Header from './components/Header';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import Bill from './page/Bill';
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           <Route path="/" exact element={<HomePage />} />
           <Route path="/order" element={<Order />} />
           <Route path="/dashboard" element={<DashBoard />} />
+          <Route path="/bill" element={<Bill />} />
         </Routes>
       </div>
     </Router>
