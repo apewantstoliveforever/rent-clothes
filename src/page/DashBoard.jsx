@@ -64,6 +64,7 @@ const DashBoard = () => {
                             //remove image from item
                             const newCloth = {
                                 Brand: item.Brand,
+                                Color: item.Color,
                                 Type: item.Type,
                                 Size: item.Size,
                                 Gender: item.Gender,

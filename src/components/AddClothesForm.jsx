@@ -16,6 +16,33 @@ const Item = ({ onImageChange, onInputChange, item }) => {
                 <input type="text" name="Brand" value={item.Brand} onChange={onInputChange} />
             </label>
             <label style={{ margin: '5px' }}>
+                Color:
+                <select name="Color" value={item.Color} onChange={onInputChange} style={{ padding: '5px' }}>
+                    <option value="Red">Red</option>
+                    <option value="Blue">Blue</option>
+                    <option value="Green">Green</option>
+                    <option value="Yellow">Yellow</option>
+                    <option value="Black">Black</option>
+                    <option value="White">White</option>
+                    <option value="Grey">Grey</option>
+                    <option value="Brown">Brown</option>
+                    <option value="Purple">Purple</option>
+                    <option value="Pink">Pink</option>
+                    <option value="Orange">Orange</option>
+                    <option value="Cyan">Cyan</option>
+                    <option value="Magenta">Magenta</option>
+                    <option value="Lime">Lime</option>
+                    <option value="Teal">Teal</option>
+                    <option value="Indigo">Indigo</option>
+                    <option value="Violet">Violet</option>
+                    <option value="Fuchsia">Fuchsia</option>
+                    <option value="Gold">Gold</option>
+                    <option value="Silver">Silver</option>
+                    <option value="Bronze">Bronze</option>
+                    <option value="Other">Khác</option>
+                </select>
+            </label>
+            <label style={{ margin: '5px' }}>
                 Type:
                 <input type="text" name="Type" value={item.Type} onChange={onInputChange} />
             </label>

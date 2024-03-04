@@ -34,7 +34,6 @@ const Bill = () => {
             const billsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
             setBills(billsData);
         });
-
         // Clean up function to unsubscribe from the snapshot listener when component unmounts
         return () => unsubscribe();
     }, []);

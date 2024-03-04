@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import ReactDOMServer from 'react-dom/server';
 import Modal from 'react-modal';
 import { getDatabase, ref, onValue } from "firebase/database";
-import { onSnapshot, collection, getDocs, updateDoc, doc, addDoc, query, where } from "firebase/firestore";
+import { deleteDoc, onSnapshot, collection, getDocs, updateDoc, doc, addDoc, query, where } from "firebase/firestore";
 import { firestore } from '../service/firebase';
 
 Modal.setAppElement('#root');
@@ -21,6 +21,24 @@ const Order = () => {
 
   const [genderFilter, setGenderFilter] = useState('');
   const [sizeFilter, setSizeFilter] = useState('');
+
+  const [customerName, setCustomerName] = useState('');
+  const [customerNumber, setCustomerNumber] = useState('');
+  const [customerAddress, setCustomerAddress] = useState('');
+
+  const [bill, setBill] = useState('');
+
+  const [billInfoForPrint, setBillInfoForPrint] = useState({});
+
+  const handleChangeName = (e) => {
+    setCustomerName(e.target.value);
+  };
+  const handleChangeNumber = (e) => {
+    setCustomerNumber(e.target.value);
+  };
+  const handleChangeAddress = (e) => {
+    setCustomerAddress(e.target.value);
+  };
 
   const handleChooseOption = (id, option) => {
     const cloth = chosenClothes.find((c) => c.id === id);
@@ -79,6 +97,42 @@ const Order = () => {
     setIsBillPrintable(false);
   };
 
+  const handleDeleteOrder = () => {
+    chosenClothes.forEach((cloth) => {
+      const clothRow = document.querySelector(`tr[row="row-${cloth.id}"]`);
+      if (clothRow) {
+        clothRow.style.backgroundColor = 'white';
+      }
+    });
+    //delete order from firestore
+    const clothesCollectionRef = collection(firestore, 'clothes');
+    chosenClothes.forEach((clothe) => {
+      const clothesId = clothe.id;
+      const docPath = String(clothesId); // Ensure clothesId is converted to string
+      try {
+        updateDoc(doc(clothesCollectionRef, docPath), {
+          Available: true
+        });
+        console.log(`Clothes with ID ${clothesId} availability updated.`);
+      } catch (error) {
+        console.error(`Error updating availability for clothes with ID ${clothesId}: ${error}`);
+      }
+    });
+    //delete bill from firestore
+    const BillRef = collection(firestore, 'bills');
+    try {
+      deleteDoc(doc(BillRef, bill));
+      console.log('Bill deleted');
+    } catch (error) {
+      console.error('Error deleting bill: ', error.message);
+    }
+    setChosenClothes([]);
+    setTotalPrice(0);
+    setIsOrderPlaced(false);
+    setIsBillPrintable(false);
+    setIsModalOpen(false);
+  };
+
   // const addClothingItem = async () => {
   //   try {
   //     const q = query(collection(firestore, "clothes"), where("Available", "==", true));
@@ -106,31 +160,72 @@ const Order = () => {
   }, []);
 
   const PrintModalContent = () => {
+    const TotalRentFee = chosenClothes.reduce((acc, cloth) => {
+      const clothObj = clothes.find((c) => c.id === cloth.id);
+      return acc + clothObj.RentalFee;
+    }, 0);
+    const TotalDepositFee = chosenClothes.reduce((acc, cloth) => {
+      const clothObj = clothes.find((c) => c.id === cloth.id);
+      return acc + clothObj.Deposit;
+    }, 0);
+    const TotalPrice = TotalRentFee + TotalDepositFee;
     return (
       <div>
-        <h2>Order Summary</h2>
+        <img src="b2.png" alt="Kalynn.store" style={{ width: '25%', float: 'right' }} />
+        <p><strong>Tên Khách hàng:</strong> {customerName} <strong>Số điện thoại:</strong> {customerNumber}</p>
+        <p><strong>Địa chỉ:</strong> {customerAddress}</p>
         <table>
           <thead>
             <tr>
-              <th>Type</th>
+              <th>Số thứ tự</th>
+              <th>Màu sắc</th>
+              <th>Sản phẩm</th>
               <th>Size</th>
-              <th>RentalFee</th>
+              <th>Tiền Thuê</th>
+              <th>Đặt cọc</th>
             </tr>
           </thead>
           <tbody>
-            {chosenClothes.map((cloth) => {
+            {chosenClothes.map((cloth, index) => {
               const clothObj = clothes.find((c) => c.id === cloth.id);
               return (
                 <tr key={cloth.id}>
+                  <td>{index + 1}</td>
+                  <td>{clothObj.Color}</td>
                   <td>{clothObj.Type}</td>
                   <td>{clothObj.Size}</td>
-                  <td>${clothObj.RentalFee}</td>
+                  <td>{clothObj.RentalFee} đồng</td>
+                  <td>{clothObj?.Deposit} đồng</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        <p>Total Price: ${totalPrice}</p>
+        <p style={{ fontSize: '12px', marginRight: '20px', textAlign: 'right' }}><strong>Total Price:</strong> {TotalPrice} đồng</p>
+        <div className='print-non-display' style={{ display: 'none' }}>
+          <table style={{ borderCollapse: 'collapse', width: '50%', margin: '4px' }}>
+            <thead>
+              <tr style={{ backgroundColor: '#f' }}>
+                <th style={{ border: '1px solid black', padding: '5px', height: '35px' }}>Ngày giao</th>
+                <th style={{ border: '1px solid black', padding: '5px', height: '35px' }}>Ngày trả</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ border: '1px solid black', padding: '5px', height: '30px' }}></td>
+                <td style={{ border: '1px solid black', padding: '5px', height: '30px' }}></td>
+              </tr>
+            </tbody>
+          </table>
+          <div style={{ borderTop: '1px solid black', borderBottom: '1px solid black', fontSize: '8px' }}>
+            <ul>
+              <li>Lưu ý cọc không hủy</li>
+              <li>Chỉ giao khi nhận đủ cọc</li>
+              <li>Xác nhận tình trạng váy sau 15 phút nhận đồ, sau 15 phút không nhận xử lý</li>
+              <li>Phí thuê thêm ngày 10%</li>
+            </ul>
+          </div>
+        </div>
       </div>
     );
   };
@@ -138,11 +233,30 @@ const Order = () => {
   const handlePrintBill = () => {
     const printContent = ReactDOMServer.renderToStaticMarkup(<PrintModalContent />); // Render as JSX component
     const printWindow = window.open('', '_blank');
-    printWindow.document.write('<html><head><title>Print</title></head><body>');
-    printWindow.document.write('<div>');
-    printWindow.document.write('<style> @page { size: A3 landscape; } table {width: 100%; border-collapse: collapse;} th, td {border: 1px solid black; padding: 8px;}</style>'); // Set page size to A3 landscape
-    printWindow.document.write(printContent);
-    printWindow.document.write('</div></body></html>');
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Kalynn.store ☏ 070.459.2839</title>
+          <style>
+            /* CSS styles for printing */
+            @page { size: A5 landscape; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid black; padding: 5px; font-size: 12px; }
+            ul { display: block; }
+          </style>
+        </head>
+        <body>
+          <div>
+            ${printContent}
+          </div>
+          <!-- Rest of your printing logic... -->
+        </body>
+      </html>
+    `);
+    const importantNote = printWindow.document.querySelector('.print-non-display');
+    if (importantNote) {
+      importantNote.style.display = 'block';
+    }
     printWindow.document.close();
     printWindow.print();
     printWindow.onafterprint = () => {
@@ -151,6 +265,7 @@ const Order = () => {
     closeModal();
     console.log('Print Bill');
   };
+
 
   const handlePlaceOrder = async () => {
     setIsOrderPlaced(true);
@@ -188,9 +303,9 @@ const Order = () => {
     });
     const timeStamps = new Date();
     const newBill = {
-      Name: 'Name',
-      Number: 'Number',
-      Address: 'Address',
+      Name: customerName,
+      Number: customerNumber,
+      Address: customerAddress,
       TotalPrice: totalPrice,
       Date: timeStamps,
       clothesRented: clothesRented,
@@ -199,8 +314,13 @@ const Order = () => {
 
 
     try {
-      await addDoc(BillRef, newBill);
+      await addDoc(BillRef, newBill)
+        .then((docRef) => {
+          console.log("Bill written with ID: ", docRef.id);
+          setBill(docRef.id);
+        });
       console.log('New bill added');
+      //add Bill infor for print
     } catch (error) {
       console.error('Error adding new bill: ', error.message);
     }
@@ -229,6 +349,8 @@ const Order = () => {
         <thead>
           <tr>
             <th>Image</th>
+            <th>Brand</th>
+            <th>Color</th>
             <th>Type</th>
             <th>Rental Fee</th>
             <th>Size</th>
@@ -236,7 +358,7 @@ const Order = () => {
             <th>Action</th>
           </tr>
           <tr>
-            <td colSpan="6" style={{ backgroundColor: '#f2f2f2', padding: '8px' }}>
+            <td colSpan="6" style={{ backgroundColor: '#f2f2f2', padding: '5px' }}>
               <strong>Filter:</strong>&nbsp;
               Gender:
               <select onChange={(e) => handleFilter('genderFilter', e.target.value)}>
@@ -261,8 +383,10 @@ const Order = () => {
           {clothes.map((cloth) => (
             <tr row={`row-${cloth.id}`} key={cloth.id} style={{ borderBottom: '1px solid #ddd' }}>
               <td><img src={cloth.imageUrl} alt={cloth.Type} style={{ width: '100px' }} /></td>
+              <td>{cloth.Brand}</td>
+              <td>{cloth.Color}</td>
               <td>{cloth.Type}</td>
-              <td>${cloth.RentalFee}</td>
+              <td>{cloth.RentalFee} đồng</td>
               <td>{cloth.Size}</td>
               <td>{cloth.Gender}</td>
               <td>
@@ -283,20 +407,21 @@ const Order = () => {
         <PrintModalContent />
         <label style={{ margin: '5px' }}>
           Name:
-          <input type="text" name="Name" />
+          <input type="text" name="Name" onChange={handleChangeName} />
         </label>
         <label style={{ margin: '5px' }}>
           Number:
-          <input type="number" name="Number" />
+          <input type="number" name="Number" onChange={handleChangeNumber} />
         </label>
         <address style={{ margin: '5px' }}>
           Address:
-          <input type="text" name="Address" />
+          <input type="text" name="Address" onChange={handleChangeAddress} />
         </address>
         <p>Total Price: ${totalPrice}</p>
         <button onClick={handlePlaceOrder} disabled={isOrderPlaced}>Place Order</button>
         <button onClick={handlePrintBill} disabled={!isBillPrintable}>Print Bill</button>
         <button onClick={closeModal}>Close</button>
+        <button onClick={handleDeleteOrder} disabled={isOrderPlaced}>Delete Order</button>
       </Modal>
     </div>
   );
