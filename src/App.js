@@ -4,9 +4,9 @@ import Order from './page/Order';
 import DashBoard from './page/DashBoard';
 
 import Header from './components/Header';
-// import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import { BrowserRouter as Route, Routes } from 'react-router-dom';
-import { HashRouter as Router } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+// import { BrowserRouter as Route, Routes } from 'react-router-dom';
+// import { HashRouter as Router } from 'react-router-dom';
 import Bill from './page/Bill';
 import AllProducts from './page/AllProducts';
 

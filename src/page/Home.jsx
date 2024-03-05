@@ -6,9 +6,15 @@ import { auth, firestore } from '../service/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { addDoc, collection } from 'firebase/firestore';
 
+import Bill from './Bill';
+import DashBoard from './DashBoard';
+import Order from './Order';
+import AllProducts from './AllProducts';
+
 
 const HomePage = () => {
     const [user, setUser] = useState(null);
+    const [selectedTab, setSelectedTab] = useState('home');
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged((authUser) => {
@@ -104,6 +110,29 @@ const HomePage = () => {
                     <button onClick={CLickAddItem}>Add Clothing Item</button>
                 </div>
             </div>
+            {/* addtab to render different component */}
+            <div>
+                <button onClick={() => setSelectedTab('home')}>Home</button>
+                <button onClick={() => setSelectedTab('order')}>Order</button>
+                <button onClick={() => setSelectedTab('dashboard')}>Dashboard</button>
+                <button onClick={() => setSelectedTab('bill')}>Bill</button>
+                <button onClick={() => setSelectedTab('all-products')}>All Products</button>
+            </div>
+            {
+                selectedTab === 'home' && <h1>Home</h1>
+            }
+            {
+                selectedTab === 'order' && <Order />
+            }
+            {
+                selectedTab === 'dashboard' && <DashBoard />
+            }
+            {
+                selectedTab === 'bill' && <Bill />
+            }
+            {
+                selectedTab === 'all-products' && <AllProducts />
+            }
         </div>
     );
 }
