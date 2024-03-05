@@ -14,6 +14,8 @@ const Order = () => {
   const [countChosenClothes, setCountChosenClothes] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [totalPrice, setTotalPrice] = useState(0);
+  const [totalDepositFee, setTotalDepositFee] = useState(0);
+  const [totalRentFee, setTotalRentFee] = useState(0);
 
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
   const [isBillPrintable, setIsBillPrintable] = useState(false);
@@ -22,7 +24,7 @@ const Order = () => {
   // const [genderFilter, setGenderFilter] = useState('');
   const [sizeFilter, setSizeFilter] = useState('');
   const [colorFilter, setcolorFilter] = useState('');
-
+  const [typeFilter, setTypeFilter] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerNumber, setCustomerNumber] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
@@ -50,6 +52,8 @@ const Order = () => {
     if (!cloth) {
       setChosenClothes([...chosenClothes, { id, option }]);
       console.log(chosenClothes);
+      setTotalRentFee(totalRentFee + clothes.find((c) => c.id === id).RentalFee);
+      setTotalDepositFee(totalDepositFee + clothes.find((c) => c.id === id).Deposit);
       setTotalPrice(totalPrice + clothes.find((c) => c.id === id).RentalFee + clothes.find((c) => c.id === id).Deposit);
     } else {
       if (!option) {
@@ -77,6 +81,10 @@ const Order = () => {
     else if (type === 'colorFilter') {
       setcolorFilter(value);
       console.log('Color filter:', value);
+    }
+    else if (type === 'typeFilter') {
+      setTypeFilter(value);
+      console.log('Type filter:', value);
     }
 
   };
@@ -146,19 +154,6 @@ const Order = () => {
     setIsModalOpen(false);
   };
 
-  // const addClothingItem = async () => {
-  //   try {
-  //     const q = query(collection(firestore, "clothes"), where("Available", "==", true));
-  //     const querySnapshot = await getDocs(q);
-  //     const clothesList = querySnapshot.docs.map(doc => {
-  //       return { id: doc.id, ...doc.data() };
-  //     });
-  //     return clothesList; // Return the clothesList
-  //   } catch (error) {
-  //     console.error('Error adding clothing item: ', error.message);
-  //   }
-  // };
-
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(firestore, 'clothes'), (snapshot) => {
       const clothesData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
@@ -175,7 +170,7 @@ const Order = () => {
   useEffect(() => {
     console.log(sizeFilter, colorFilter);
     const fetchClothes = async () => {
-      if (sizeFilter === '' && colorFilter === '') {
+      if (sizeFilter === '' && colorFilter === '' && typeFilter === '') {
         const q = query(collection(firestore, "clothes"));
         const querySnapshot = await getDocs(q);
         const clothesList = querySnapshot.docs.map(doc => ({
@@ -192,15 +187,19 @@ const Order = () => {
       if (colorFilter !== '') {
         q = query(q, where("Color", "==", colorFilter));
       }
+      if (typeFilter !== '') {
+        q = query(q, where("Type", "==", typeFilter));
+      }
       const querySnapshot = await getDocs(q);
       const clothesList = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      console.log(clothesList);
       setClothes(clothesList);
     };
     fetchClothes();
-  }, [sizeFilter, colorFilter]);
+  }, [sizeFilter, colorFilter, typeFilter]);
 
 
   const PrintModalContent = () => {
@@ -215,7 +214,7 @@ const Order = () => {
     const TotalPrice = TotalRentFee + TotalDepositFee;
     return (
       <div>
-        <img src="b2.png" alt="Kalynn.store" style={{ width: '25%', float: 'right' }} />
+        <img src="rent-clothes/b2.png" alt="Kalynn.store" style={{ width: '25%', float: 'right' }} />
         <div className='print-customer-info' style={{display: 'none'}}>
           <p><strong>Tên Khách hàng:</strong> {customerName} <strong>Số điện thoại:</strong> {customerNumber}</p>
           <p><strong>Địa chỉ:</strong> {customerAddress}</p>
@@ -247,7 +246,9 @@ const Order = () => {
             })}
           </tbody>
         </table>
-        <p style={{ fontSize: '12px', marginRight: '20px', textAlign: 'right' }}><strong>Total Price:</strong>  {TotalPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
+        <p style={{ fontSize: '9px', marginRight: '20px', textAlign: 'right' }}><strong>Tiền đặt cọc:</strong> {TotalDepositFee.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
+        <p style={{ fontSize: '9px', marginRight: '20px', textAlign: 'right' }}><strong>Tiền thuê:</strong> {TotalRentFee.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
+        <p style={{ borderTop:'1px solid black', paddingTop:'5px', fontSize: '12px', marginRight: '20px', textAlign: 'right' }}><strong>Tổng số tiền:</strong>  {TotalPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
         <div className='print-non-display' style={{ display: 'none' }}>
           <table style={{ borderCollapse: 'collapse', width: '50%', margin: '4px' }}>
             <thead>
@@ -357,6 +358,7 @@ const Order = () => {
       Number: customerNumber,
       Address: customerAddress,
       TotalPrice: totalPrice,
+      TotalDepositFee: totalDepositFee,
       Date: timeStamps,
       clothesRented: clothesRented,
       Returned: false
@@ -398,12 +400,12 @@ const Order = () => {
       <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
         <thead>
           <tr>
-            <th>Image</th>
-            <th>Brand</th>
-            <th>Color</th>
-            <th>Type</th>
-            <th>Rental Fee</th>
-            <th>Deposit</th>
+            <th>Hình ảnh</th>
+            <th>Thương hiệu</th>
+            <th>Màu sắc</th>
+            <th>Hình dạng</th>
+            <th>Giá thuê</th>
+            <th>Tiền đặt cọc</th>
             <th>Size</th>
             {/* <th>Gender</th> */}
             <th>Action</th>
@@ -454,6 +456,8 @@ const Order = () => {
                 <option value="Bronze">Bronze</option>
                 <option value="Other">Khác</option>
               </select>
+              Dạng:
+              <input type="text" name="Type" onChange={(e) => handleFilter('typeFilter', e.target.value)} />
             </td>
           </tr>
         </thead>
@@ -496,6 +500,8 @@ const Order = () => {
           Địa chỉ:
           <textarea type="text" name="Address" onChange={handleChangeAddress} />
         </address>
+        <p><strong>Tiền thuê:</strong> {totalRentFee.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
+        <p><strong>Tiền đặt cọc:</strong> {totalDepositFee.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
         <p><strong>Tổng số tiền:</strong> {totalPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
         <button onClick={handlePlaceOrder} disabled={isOrderPlaced}>Đặt Hàng</button>
         <button onClick={handlePrintBill} disabled={!isBillPrintable}>In Bill</button>

@@ -83,15 +83,10 @@ const HomePage = () => {
         rented: false,
     };
 
-    const CLickAddItem = () => {
-        addClothingItem(clothingItemData);
-    }
 
     return (
         <div>
-            <h1>HomePage</h1>
             <div>
-                <h1>React Firebase App</h1>
                 {user ? (
                     <div>
                         <p>Welcome, {user.email}!</p>
@@ -103,20 +98,18 @@ const HomePage = () => {
                         <button onClick={signIn}>Sign In</button>
                     </div>
                 )}
-                <div>
+                <h1>Kalynn shop</h1>
+                {/* <div>
                     <button onClick={createNewUser}>Create New User</button>
-                </div>
-                <div>
-                    <button onClick={CLickAddItem}>Add Clothing Item</button>
-                </div>
+                </div> */}
             </div>
             {/* addtab to render different component */}
             <div>
                 <button onClick={() => setSelectedTab('home')}>Home</button>
-                <button onClick={() => setSelectedTab('order')}>Order</button>
-                <button onClick={() => setSelectedTab('dashboard')}>Dashboard</button>
-                <button onClick={() => setSelectedTab('bill')}>Bill</button>
-                <button onClick={() => setSelectedTab('all-products')}>All Products</button>
+                <button onClick={() => setSelectedTab('order')}>Đặt hàng</button>
+                <button onClick={() => setSelectedTab('dashboard')}>Thêm hàng</button>
+                <button onClick={() => setSelectedTab('bill')}>Trả hàng</button>
+                <button onClick={() => setSelectedTab('all-products')}>Thay đổi, xóa hàng</button>
             </div>
             {
                 selectedTab === 'home' && <h1>Home</h1>

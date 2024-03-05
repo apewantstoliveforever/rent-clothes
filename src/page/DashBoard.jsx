@@ -89,7 +89,6 @@ const DashBoard = () => {
     return (
         <div>
             <h1>Dashboard</h1>
-            <p>Welcome {user?.email}</p>
             <AddClothesForm addNewClothes={handleAddClothes} />
         </div>
     );
