@@ -58,13 +58,17 @@ const Item = ({ onImageChange, onInputChange, item }) => {
                 </select>
             </label>
             <label style={{ margin: '5px' }}>
+                Deposit:
+                <input type="number" name="Deposit" value={item.Deposit} onChange={onInputChange} min="0" />
+            </label>
+            {/* <label style={{ margin: '5px' }}>
                 Gender
                 <select name='Gender' value={item.Gender} onChange={onInputChange} style={{ padding: '5px' }}>
                     <option value='Unisex'>Unisex</option>
                     <option value='Male'>Male</option>
                     <option value='Female'>Female</option>
                 </select>
-            </label>
+            </label> */}
             <label style={{ margin: '5px' }}>
                 Rental Fee:
                 <input type="number" name="RentalFee" value={item.RentalFee} onChange={onInputChange} min="0" />
@@ -74,7 +78,7 @@ const Item = ({ onImageChange, onInputChange, item }) => {
 };
 
 const AddClothesForm = ({ addNewClothes }) => {
-    const [items, setItems] = useState([{ Brand: '', Type: '', Size: 'XS', RentalFee: '', Available: true, Image: '', Gender: 'Unisex', InBillId: null, image: null }]);
+    const [items, setItems] = useState([{ Brand: '', Color:'Other', Deposit:'', Type: '', Size: 'XS', RentalFee: '', Available: true, Image: '', Gender: 'Unisex', InBillId: null, image: null }]);
 
     const handleImageChange = (index, e) => {
         const file = e.target.files[0];
@@ -92,6 +96,9 @@ const AddClothesForm = ({ addNewClothes }) => {
         if (name && name === 'RentalFee') {
             newItems[index][name] = Number(value);
         }
+        else if (name && name === 'Deposit') {
+            newItems[index][name] = Number(value);
+        }
         else {
             newItems[index][name] = value;
         }
@@ -100,14 +107,14 @@ const AddClothesForm = ({ addNewClothes }) => {
     };
 
     const handleAddMore = () => {
-        setItems([...items, { Brand: '', Type: '', Size: 'XS', RentalFee: "", Available: true, Image: '', Gender: 'Unisex', InBillId: null, image: null }]);
+        setItems([...items, { Brand: '', Color:'Other', Deposit:'', Type: '', Size: 'XS', RentalFee: "", Available: true, Image: '', Gender: 'Unisex', InBillId: null, image: null }]);
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         addNewClothes(items);
         // Reset items array
-        setItems([{ Brand: '', Type: '', Size: 'XS', RentalFee: "", Available: true, Image: '', Gender: 'Unisex', InBillId: null, image: null }]);
+        setItems([{ Brand: '',  Deposit:'',  Color:'Other', Type: '', Size: 'XS', RentalFee: "", Available: true, Image: '', Gender: 'Unisex', InBillId: null, image: null }]);
     };
 
     return (
@@ -120,10 +127,11 @@ const AddClothesForm = ({ addNewClothes }) => {
                         onImageChange={(e) => handleImageChange(index, e)}
                         onInputChange={(e) => handleInputChange(index, e)}
                     />
+                    <button onClick={() => setItems(items.filter((_, i) => i !== index))}>Xóa</button>
                 </div>
             ))}
-            <button onClick={handleAddMore}>Add more</button>
-            <button type="submit" style={{ padding: '10px', marginTop: '10px' }} onClick={handleSubmit}> Add Clothes</button>
+            <button onClick={handleAddMore}>Thêm</button>
+            <button type="submit" style={{ padding: '10px', marginTop: '10px' }} onClick={handleSubmit}> Xác nhận thêm quần áo</button>
         </div>
     );
 };

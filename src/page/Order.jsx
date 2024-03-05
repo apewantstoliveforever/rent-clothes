@@ -19,8 +19,9 @@ const Order = () => {
   const [isBillPrintable, setIsBillPrintable] = useState(false);
 
 
-  const [genderFilter, setGenderFilter] = useState('');
+  // const [genderFilter, setGenderFilter] = useState('');
   const [sizeFilter, setSizeFilter] = useState('');
+  const [colorFilter, setcolorFilter] = useState('');
 
   const [customerName, setCustomerName] = useState('');
   const [customerNumber, setCustomerNumber] = useState('');
@@ -48,11 +49,15 @@ const Order = () => {
     }
     if (!cloth) {
       setChosenClothes([...chosenClothes, { id, option }]);
+      console.log(chosenClothes);
+      setTotalPrice(totalPrice + clothes.find((c) => c.id === id).RentalFee + clothes.find((c) => c.id === id).Deposit);
     } else {
       if (!option) {
         setChosenClothes(chosenClothes.filter((c) => c.id !== id));
+        setTotalPrice(totalPrice - clothes.find((c) => c.id === id).RentalFee - clothes.find((c) => c.id === id).Deposit);
       } else {
         setChosenClothes(chosenClothes.map((c) => (c.id === id ? { ...c, option } : c)));
+        setTotalPrice(totalPrice + clothes.find((c) => c.id === id).RentalFee + clothes.find((c) => c.id === id).Deposit);
       }
     }
   };
@@ -61,23 +66,31 @@ const Order = () => {
     console.log(type, value);
     // const updatedFilters = { ...filters, [type]: value };
     // setFilters(updatedFilters);
-    if (type === 'genderFilter') {
-      setGenderFilter(value);
-      console.log(genderFilter)
-    } else if (type === 'sizeFilter') {
+    // if (type === 'genderFilter') {
+    //   setGenderFilter(value);
+    //   console.log(genderFilter)
+    // } else 
+    if (type === 'sizeFilter') {
       setSizeFilter(value);
       console.log(sizeFilter)
     }
-    console.log(genderFilter, sizeFilter);
+    else if (type === 'colorFilter') {
+      setcolorFilter(value);
+      console.log('Color filter:', value);
+    }
+
   };
 
+
+
   const handleOrder = () => {
-    let totalPrice = 0;
+    // let totalPrice = 0;
     chosenClothes.forEach((cloth) => {
       const clothObj = clothes.find((c) => c.id === cloth.id);
-      totalPrice += clothObj.RentalFee;
+      // totalPrice += clothObj.RentalFee + clothObj.Deposit;
+      // console.log(totalPrice);
     });
-    setTotalPrice(totalPrice);
+    // setTotalPrice(totalPrice);
     setIsModalOpen(true);
   };
 
@@ -159,6 +172,37 @@ const Order = () => {
     return () => unsubscribe();
   }, []);
 
+  useEffect(() => {
+    console.log(sizeFilter, colorFilter);
+    const fetchClothes = async () => {
+      if (sizeFilter === '' && colorFilter === '') {
+        const q = query(collection(firestore, "clothes"));
+        const querySnapshot = await getDocs(q);
+        const clothesList = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setClothes(clothesList);
+        return;
+      }
+      let q = collection(firestore, "clothes");
+      if (sizeFilter !== '') {
+        q = query(q, where("Size", "==", sizeFilter));
+      }
+      if (colorFilter !== '') {
+        q = query(q, where("Color", "==", colorFilter));
+      }
+      const querySnapshot = await getDocs(q);
+      const clothesList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setClothes(clothesList);
+    };
+    fetchClothes();
+  }, [sizeFilter, colorFilter]);
+
+
   const PrintModalContent = () => {
     const TotalRentFee = chosenClothes.reduce((acc, cloth) => {
       const clothObj = clothes.find((c) => c.id === cloth.id);
@@ -172,8 +216,10 @@ const Order = () => {
     return (
       <div>
         <img src="b2.png" alt="Kalynn.store" style={{ width: '25%', float: 'right' }} />
-        <p><strong>Tên Khách hàng:</strong> {customerName} <strong>Số điện thoại:</strong> {customerNumber}</p>
-        <p><strong>Địa chỉ:</strong> {customerAddress}</p>
+        <div className='print-customer-info' style={{display: 'none'}}>
+          <p><strong>Tên Khách hàng:</strong> {customerName} <strong>Số điện thoại:</strong> {customerNumber}</p>
+          <p><strong>Địa chỉ:</strong> {customerAddress}</p>
+        </div>
         <table>
           <thead>
             <tr>
@@ -201,7 +247,7 @@ const Order = () => {
             })}
           </tbody>
         </table>
-        <p style={{ fontSize: '12px', marginRight: '20px', textAlign: 'right' }}><strong>Total Price:</strong> {TotalPrice} đồng</p>
+        <p style={{ fontSize: '12px', marginRight: '20px', textAlign: 'right' }}><strong>Total Price:</strong>  {TotalPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
         <div className='print-non-display' style={{ display: 'none' }}>
           <table style={{ borderCollapse: 'collapse', width: '50%', margin: '4px' }}>
             <thead>
@@ -243,6 +289,7 @@ const Order = () => {
             table { width: 100%; border-collapse: collapse; }
             th, td { border: 1px solid black; padding: 5px; font-size: 12px; }
             ul { display: block; }
+            p { display: block; }
           </style>
         </head>
         <body>
@@ -256,6 +303,10 @@ const Order = () => {
     const importantNote = printWindow.document.querySelector('.print-non-display');
     if (importantNote) {
       importantNote.style.display = 'block';
+    }
+    const customerInfo = printWindow.document.querySelector('.print-customer-info');
+    if (customerInfo) {
+      customerInfo.style.display = 'block';
     }
     printWindow.document.close();
     printWindow.print();
@@ -271,7 +322,6 @@ const Order = () => {
     setIsOrderPlaced(true);
     setIsBillPrintable(true);
     console.log('Place Order');
-    console.log(chosenClothes);
 
     const clothesCollectionRef = collection(firestore, 'clothes');
 
@@ -353,28 +403,56 @@ const Order = () => {
             <th>Color</th>
             <th>Type</th>
             <th>Rental Fee</th>
+            <th>Deposit</th>
             <th>Size</th>
-            <th>Gender</th>
+            {/* <th>Gender</th> */}
             <th>Action</th>
           </tr>
           <tr>
             <td colSpan="6" style={{ backgroundColor: '#f2f2f2', padding: '5px' }}>
               <strong>Filter:</strong>&nbsp;
-              Gender:
+              {/* Gender:
               <select onChange={(e) => handleFilter('genderFilter', e.target.value)}>
                 <option value="">All</option>
                 <option value="Unisex">Unisex</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
               </select>
-              &nbsp;
+              &nbsp; */}
               Size:
               <select onChange={(e) => handleFilter('sizeFilter', e.target.value)}>
                 <option value="">All</option>
                 <option value="S">S</option>
+                <option value="XS">XS</option>
                 <option value="M">M</option>
                 <option value="L">L</option>
                 <option value="XL">XL</option>
+              </select>
+              Color:
+              <select name="Color" onChange={(e) => handleFilter('colorFilter', e.target.value)}>
+                <option value="">All</option>
+                <option value="Red">Red</option>
+                <option value="Blue">Blue</option>
+                <option value="Green">Green</option>
+                <option value="Yellow">Yellow</option>
+                <option value="Black">Black</option>
+                <option value="White">White</option>
+                <option value="Grey">Grey</option>
+                <option value="Brown">Brown</option>
+                <option value="Purple">Purple</option>
+                <option value="Pink">Pink</option>
+                <option value="Orange">Orange</option>
+                <option value="Cyan">Cyan</option>
+                <option value="Magenta">Magenta</option>
+                <option value="Lime">Lime</option>
+                <option value="Teal">Teal</option>
+                <option value="Indigo">Indigo</option>
+                <option value="Violet">Violet</option>
+                <option value="Fuchsia">Fuchsia</option>
+                <option value="Gold">Gold</option>
+                <option value="Silver">Silver</option>
+                <option value="Bronze">Bronze</option>
+                <option value="Other">Khác</option>
               </select>
             </td>
           </tr>
@@ -387,8 +465,9 @@ const Order = () => {
               <td>{cloth.Color}</td>
               <td>{cloth.Type}</td>
               <td>{cloth.RentalFee} đồng</td>
+              <td>{cloth.Deposit} đồng</td>
               <td>{cloth.Size}</td>
-              <td>{cloth.Gender}</td>
+              {/* <td>{cloth.Gender}</td> */}
               <td>
                 {
                   cloth.Available ?
@@ -406,20 +485,20 @@ const Order = () => {
       <Modal isOpen={isModalOpen} onRequestClose={closeModal}>
         <PrintModalContent />
         <label style={{ margin: '5px' }}>
-          Name:
+          Họ tên:
           <input type="text" name="Name" onChange={handleChangeName} />
         </label>
         <label style={{ margin: '5px' }}>
-          Number:
+          Số điện thoại:
           <input type="number" name="Number" onChange={handleChangeNumber} />
         </label>
         <address style={{ margin: '5px' }}>
-          Address:
-          <input type="text" name="Address" onChange={handleChangeAddress} />
+          Địa chỉ:
+          <textarea type="text" name="Address" onChange={handleChangeAddress} />
         </address>
-        <p>Total Price: ${totalPrice}</p>
-        <button onClick={handlePlaceOrder} disabled={isOrderPlaced}>Place Order</button>
-        <button onClick={handlePrintBill} disabled={!isBillPrintable}>Print Bill</button>
+        <p><strong>Tổng số tiền:</strong> {totalPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
+        <button onClick={handlePlaceOrder} disabled={isOrderPlaced}>Đặt Hàng</button>
+        <button onClick={handlePrintBill} disabled={!isBillPrintable}>In Bill</button>
         <button onClick={closeModal}>Close</button>
         <button onClick={handleDeleteOrder} disabled={isOrderPlaced}>Delete Order</button>
       </Modal>
