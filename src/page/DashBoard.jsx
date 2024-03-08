@@ -68,6 +68,7 @@ const DashBoard = () => {
                                 Type: item.Type,
                                 Size: item.Size,
                                 Gender: item.Gender,
+                                Kind: item.Kind,
                                 RentalFee: item.RentalFee,
                                 Deposit: item.Deposit,
                                 Available: item.Available,

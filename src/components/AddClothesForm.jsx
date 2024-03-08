@@ -12,34 +12,28 @@ const Item = ({ onImageChange, onInputChange, item }) => {
                 {item.image && <img src={URL.createObjectURL(item.image)} alt="image" style={{ maxWidth: '80px', maxHeight: '80px' }} />}
             </label>
             <label style={{ margin: '5px' }}>
+                Loại:
+                <select name="Kind" value={item.Kind} onChange={onInputChange} style={{ padding: '5px' }}>
+                    <option value="Quần áo">Quần áo</option>
+                    <option value="Phụ kiện">Phụ kiện</option>
+                    <option value="">Khác</option>
+                </select>
+            </label>
+            <label style={{ margin: '5px' }}>
                 Thương hiệu:
                 <input type="text" name="Brand" value={item.Brand} onChange={onInputChange} />
             </label>
             <label style={{ margin: '5px' }}>
                 Màu sắc:
                 <select name="Color" value={item.Color} onChange={onInputChange} style={{ padding: '5px' }}>
-                    <option value="Red">Red</option>
-                    <option value="Blue">Blue</option>
-                    <option value="Green">Green</option>
-                    <option value="Yellow">Yellow</option>
-                    <option value="Black">Black</option>
-                    <option value="White">White</option>
-                    <option value="Grey">Grey</option>
-                    <option value="Brown">Brown</option>
-                    <option value="Purple">Purple</option>
-                    <option value="Pink">Pink</option>
-                    <option value="Orange">Orange</option>
-                    <option value="Cyan">Cyan</option>
-                    <option value="Magenta">Magenta</option>
-                    <option value="Lime">Lime</option>
-                    <option value="Teal">Teal</option>
-                    <option value="Indigo">Indigo</option>
-                    <option value="Violet">Violet</option>
-                    <option value="Fuchsia">Fuchsia</option>
-                    <option value="Gold">Gold</option>
-                    <option value="Silver">Silver</option>
-                    <option value="Bronze">Bronze</option>
-                    <option value="Other">Khác</option>
+                    <option value="Đỏ">Đỏ</option>
+                    <option value="Trằng">Trắng</option>
+                    <option value="Kem">Kem</option>
+                    <option value="Đỏ">Đỏ</option>
+                    <option value="Hồng">Hồng</option>
+                    <option value="Váy Hoa">Váy Hoa</option>
+                    <option value="Vàng">Vàng</option>
+                    <option value="Khác">Khác</option>
                 </select>
             </label>
             <label style={{ margin: '5px' }}>
@@ -78,7 +72,7 @@ const Item = ({ onImageChange, onInputChange, item }) => {
 };
 
 const AddClothesForm = ({ addNewClothes }) => {
-    const [items, setItems] = useState([{ Brand: '', Color: 'Other', Deposit: 0, Type: '', Size: 'XS', RentalFee: 0, Available: true, Image: '', Gender: 'Unisex', InBillId: null, image: null }]);
+    const [items, setItems] = useState([{ Kind:'', Brand: '', Color: 'Khác', Deposit: 0, Type: '', Size: 'XS', RentalFee: 0, Available: true, Image: '', Gender: 'Unisex', InBillId: null, image: null }]);
 
     const handleImageChange = (index, e) => {
         const file = e.target.files[0];
@@ -144,14 +138,14 @@ const AddClothesForm = ({ addNewClothes }) => {
     };
 
     const handleAddMore = () => {
-        setItems([...items, { Brand: '', Color: 'Other', Deposit: 0, Type: '', Size: 'XS', RentalFee: 0, Available: true, Image: '', Gender: 'Unisex', InBillId: null, image: null }]);
+        setItems([...items, { Kind:'', Brand: '', Color: 'Khác', Deposit: 0, Type: '', Size: 'XS', RentalFee: 0, Available: true, Image: '', Gender: 'Unisex', InBillId: null, image: null }]);
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         addNewClothes(items);
         // Reset items array
-        setItems([{ Brand: '', Deposit: 0, Color: 'Other', Type: '', Size: 'XS', RentalFee: 0, Available: true, Image: '', Gender: 'Unisex', InBillId: null, image: null }]);
+        setItems([{ Kind:'', Brand: '', Deposit: 0, Color: 'Khác', Type: '', Size: 'XS', RentalFee: 0, Available: true, Image: '', Gender: 'Unisex', InBillId: null, image: null }]);
     };
 
     return (

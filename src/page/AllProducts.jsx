@@ -25,6 +25,7 @@ const AllProducts = () => {
     const [sizeFilter, setSizeFilter] = useState('');
     const [colorFilter, setcolorFilter] = useState('');
     const [typeFilter, setTypeFilter] = useState('');
+    const [kindFilter, setKindFilter] = useState('');
 
     const handleFilter = async (type, value) => {
         console.log(type, value);
@@ -45,6 +46,10 @@ const AllProducts = () => {
         else if (type === 'typeFilter') {
             setTypeFilter(value);
             console.log('Type filter:', value);
+        }
+        else if (type === 'kindFilter') {
+            setKindFilter(value);
+            console.log('Kind filter:', value);
         }
 
     };
@@ -101,43 +106,50 @@ const AllProducts = () => {
     useEffect(() => {
         console.log(sizeFilter, colorFilter);
         const fetchClothes = async () => {
-          let q = collection(firestore, "clothes");
-      
-          if (sizeFilter !== '') {
-            q = query(q, where("Size", "==", sizeFilter));
-          }
-          if (colorFilter !== '') {
-            q = query(q, where("Color", "==", colorFilter));
-          }
-          if (typeFilter !== '') {
-            q = query(q, where("Type", "==", typeFilter));
-          }
-      
-          if (sizeFilter === '' && colorFilter === '' && typeFilter === '') {
-            q = collection(firestore, "clothes");
-          }
-      
-          const querySnapshot = await getDocs(q);
-          const clothesList = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          console.log(clothesList);
-          setClothes(clothesList);
+            let q = collection(firestore, "clothes");
+
+            if (sizeFilter !== '') {
+                q = query(q, where("Size", "==", sizeFilter));
+            }
+            if (colorFilter !== '') {
+                q = query(q, where("Color", "==", colorFilter));
+            }
+            if (typeFilter !== '') {
+                q = query(q, where("Type", "==", typeFilter));
+            }
+            if (kindFilter !== '') {
+                q = query(q, where("Kind", "==", kindFilter));
+            }
+
+            if (sizeFilter === '' && colorFilter === '' && typeFilter === '' && kindFilter === '') {
+                q = collection(firestore, "clothes");
+            }
+
+            const querySnapshot = await getDocs(q);
+            const clothesList = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            console.log(clothesList);
+            setClothes(clothesList);
         };
         fetchClothes();
-      }, [sizeFilter, colorFilter, typeFilter]);
+    }, [sizeFilter, colorFilter, typeFilter, kindFilter]);
 
-      const resetFilters = () => {
+    const resetFilters = () => {
         setSizeFilter('');
         setcolorFilter('');
         setTypeFilter('');
+        setKindFilter('');
         //input to default value
-        document.getElementById('sizeFilter').value = '';
-        document.getElementById('colorFilter').value = '';
-        document.getElementById('typeFilter').value = '';
-      };
-      
+        if (document.getElementById('sizeFilter') && document.getElementById('colorFilter') && document.getElementById('typeFilter')) {
+            document.getElementById('sizeFilter').value = '';
+            document.getElementById('colorFilter').value = '';
+            document.getElementById('typeFilter').value = '';
+            document.getElementById('kindFilter').value = '';
+        }
+    };
+
 
     return (
         <div>
@@ -146,6 +158,7 @@ const AllProducts = () => {
                 <thead>
                     <tr>
                         <th>Hình ảnh</th>
+                        <th>Loại</th>
                         <th>Thương hiệu</th>
                         <th>Màu sắc</th>
                         <th>Hình dạng</th>
@@ -157,8 +170,16 @@ const AllProducts = () => {
                     </tr>
                     <tr>
                         <td colSpan="6" style={{ backgroundColor: '#f2f2f2', padding: '5px' }}>
-                            <button style={{backgroundColor: 'lightyellow'}} onClick={resetFilters}>Hiện tất cả</button>
+                            <button style={{ backgroundColor: 'lightyellow' }} onClick={resetFilters}>Hiện tất cả</button>
                             <strong>Filter:</strong>&nbsp;
+
+                            Loại:
+                            <select id='kindFilter' name="Kind" onChange={(e) => handleFilter('kindFilter', e.target.value)}>
+                                <option value="">All</option>
+                                <option value="Quần áo">Quần áo</option>
+                                <option value="Phụ kiện">Phụ kiện</option>
+                                <option value="">Khác</option>
+                            </select>
                             {/* Gender:
                                 <select onChange={(e) => handleFilter('genderFilter', e.target.value)}>
                                     <option value="">All</option>
@@ -168,7 +189,7 @@ const AllProducts = () => {
                                 </select>
                                 &nbsp; */}
                             Size:
-                            <select onChange={(e) => handleFilter('sizeFilter', e.target.value)}>
+                            <select id='sizeFilter' onChange={(e) => handleFilter('sizeFilter', e.target.value)}>
                                 <option value="">All</option>
                                 <option value="S">S</option>
                                 <option value="M">M</option>
@@ -177,33 +198,18 @@ const AllProducts = () => {
                             </select>
                             &nbsp;
                             Màu sắc:
-                            <select name="Color" onChange={(e) => handleFilter('colorFilter', e.target.value)}>
-                                <option value="">All</option>
-                                <option value="Red">Red</option>
-                                <option value="Blue">Blue</option>
-                                <option value="Green">Green</option>
-                                <option value="Yellow">Yellow</option>
-                                <option value="Black">Black</option>
-                                <option value="White">White</option>
-                                <option value="Grey">Grey</option>
-                                <option value="Brown">Brown</option>
-                                <option value="Purple">Purple</option>
-                                <option value="Pink">Pink</option>
-                                <option value="Orange">Orange</option>
-                                <option value="Cyan">Cyan</option>
-                                <option value="Magenta">Magenta</option>
-                                <option value="Lime">Lime</option>
-                                <option value="Teal">Teal</option>
-                                <option value="Indigo">Indigo</option>
-                                <option value="Violet">Violet</option>
-                                <option value="Fuchsia">Fuchsia</option>
-                                <option value="Gold">Gold</option>
-                                <option value="Silver">Silver</option>
-                                <option value="Bronze">Bronze</option>
-                                <option value="Other">Khác</option>
+                            <select id='colorFilter' name="Color" onChange={(e) => handleFilter('colorFilter', e.target.value)}>
+                                <option value="Khác">Khác</option>
+                                <option value="Đỏ">Đỏ</option>
+                                <option value="Trằng">Trắng</option>
+                                <option value="Kem">Kem</option>
+                                <option value="Đỏ">Đỏ</option>
+                                <option value="Hồng">Hồng</option>
+                                <option value="Váy Hoa">Váy Hoa</option>
+                                <option value="Vàng">Vàng</option>
                             </select>
                             Dạng:
-                            <input type="text" name="Type" onChange={(e) => handleFilter('typeFilter', e.target.value)} />
+                            <input id="typeFilter" type="text" name="Type" onChange={(e) => handleFilter('typeFilter', e.target.value)} />
                         </td>
                     </tr>
                 </thead>
@@ -211,6 +217,7 @@ const AllProducts = () => {
                     {clothes.map((cloth) => (
                         <tr row={`row-${cloth.id}`} key={cloth.id} style={{ borderBottom: '1px solid #ddd' }}>
                             <td><img src={cloth.imageUrl} alt={cloth.Type} style={{ width: '100px' }} /></td>
+                            <td>{cloth.Kind}</td>
                             <td>{cloth.Brand}</td>
                             <td>{cloth.Color}</td>
                             <td>{cloth.Type}</td>
@@ -220,7 +227,7 @@ const AllProducts = () => {
                             {/* <td>{cloth.Gender}</td> */}
                             <td>
                                 <button onClick={() => handleEdit(cloth.id)}>Thay đổi</button>
-                                <button style={{backgroundColor: '#FF3333'}} onClick={() => handleDelete(cloth.id)}>Xóa</button>
+                                <button style={{ backgroundColor: '#FF3333' }} onClick={() => handleDelete(cloth.id)}>Xóa</button>
                             </td>
                         </tr>
                     ))}
@@ -230,33 +237,28 @@ const AllProducts = () => {
                 {/* Here you can render the form for editing */}
                 {editingItemId && (
                     <form onSubmit={handleSubmit}>
+                        <label htmlFor="imageUrl">Loại:</label>
+                        <select name="Kind" value={editedItem.Kind} onChange={(e) => setEditedItem({ ...editedItem, Kind: e.target.value })}>
+                            <option value="Quần áo">Quần áo</option>
+                            <option value="Phụ kiện">Phụ kiện</option>
+                            <option value="">Khác</option>
+                        </select>
+
                         <label htmlFor="brand">Thương hiệu:</label>
                         <input type="text" id="brand" value={editedItem.Brand} onChange={(e) => setEditedItem({ ...editedItem, Brand: e.target.value })} />
 
+
+
                         <label htmlFor="color">Màu sắc:</label>
                         <select name="Color" value={editedItem.Color} onChange={(e) => setEditedItem({ ...editedItem, Color: e.target.value })}>
-                            <option value="Red">Red</option>
-                            <option value="Blue">Blue</option>
-                            <option value="Green">Green</option>
-                            <option value="Yellow">Yellow</option>
-                            <option value="Black">Black</option>
-                            <option value="White">White</option>
-                            <option value="Grey">Grey</option>
-                            <option value="Brown">Brown</option>
-                            <option value="Purple">Purple</option>
-                            <option value="Pink">Pink</option>
-                            <option value="Orange">Orange</option>
-                            <option value="Cyan">Cyan</option>
-                            <option value="Magenta">Magenta</option>
-                            <option value="Lime">Lime</option>
-                            <option value="Teal">Teal</option>
-                            <option value="Indigo">Indigo</option>
-                            <option value="Violet">Violet</option>
-                            <option value="Fuchsia">Fuchsia</option>
-                            <option value="Gold">Gold</option>
-                            <option value="Silver">Silver</option>
-                            <option value="Bronze">Bronze</option>
-                            <option value="Other">Khác</option>
+                            <option value="Đỏ">Đỏ</option>
+                            <option value="Trằng">Trắng</option>
+                            <option value="Kem">Kem</option>
+                            <option value="Đỏ">Đỏ</option>
+                            <option value="Hồng">Hồng</option>
+                            <option value="Váy Hoa">Váy Hoa</option>
+                            <option value="Vàng">Vàng</option>
+                            <option value="Khác">Khác</option>
                         </select>
 
                         <label htmlFor="type">Dạng:</label>

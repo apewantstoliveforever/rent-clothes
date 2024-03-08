@@ -28,12 +28,13 @@ const Order = () => {
   const [sizeFilter, setSizeFilter] = useState('');
   const [colorFilter, setcolorFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [kindFilter, setKindFilter] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerNumber, setCustomerNumber] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
 
-  const [customerDateSend, setCustomerDateSend] = useState('');
-  const [customerDateReturn, setCustomerDateReturn] = useState('');
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [returnDate, setReturnDate] = useState('');
 
   const [bill, setBill] = useState('');
 
@@ -50,10 +51,10 @@ const Order = () => {
   };
 
   const handleChangeDateSend = (e) => {
-    setCustomerDateSend(e.target.value);
+    setDeliveryDate(e.target.value);
   };
   const handleChangeDateReturn = (e) => {
-    setCustomerDateReturn(e.target.value);
+    setReturnDate(e.target.value);
   };
 
   const handleChooseOption = (id, option) => {
@@ -122,6 +123,10 @@ const Order = () => {
     }
     else if (type === 'typeFilter') {
       setTypeFilter(value);
+      console.log('Type filter:', value);
+    }
+    else if (type === 'kindFilter') {
+      setKindFilter(value);
       console.log('Type filter:', value);
     }
 
@@ -205,6 +210,7 @@ const Order = () => {
     setChosenClothes([]);
     setTotalPrice(0);
     setTotalDepositFee(0);
+    setTotalRentFee(0);
     setIsOrderPlaced(false);
     setIsBillPrintable(false);
     setIsModalOpen(false);
@@ -227,6 +233,8 @@ const Order = () => {
     const fetchClothes = async () => {
       let q = collection(firestore, "clothes");
 
+      const searchType = typeFilter.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
       if (sizeFilter !== '') {
         q = query(q, where("Size", "==", sizeFilter));
       }
@@ -236,8 +244,11 @@ const Order = () => {
       if (typeFilter !== '') {
         q = query(q, where("Type", "==", typeFilter));
       }
+      if (kindFilter !== '') {
+        q = query(q, where("Kind", "==", kindFilter));
+      }
 
-      if (sizeFilter === '' && colorFilter === '' && typeFilter === '') {
+      if (sizeFilter === '' && colorFilter === '' && typeFilter === '' && kindFilter === '') {
         q = collection(firestore, "clothes");
       }
 
@@ -265,7 +276,7 @@ const Order = () => {
         console.log(selectOption);
       }
     });
-  }, [sizeFilter, colorFilter, typeFilter]);
+  }, [sizeFilter, colorFilter, typeFilter, kindFilter]);
 
 
 
@@ -298,10 +309,12 @@ const Order = () => {
     setSizeFilter('');
     setcolorFilter('');
     setTypeFilter('');
+    setKindFilter('');
     //input to default value
     document.getElementById('sizeFilter').value = '';
     document.getElementById('colorFilter').value = '';
     document.getElementById('typeFilter').value = '';
+    document.getElementById('kindFilter').value = '';
 
     //check clothes in chosenClothes and highlight them
     console.log(chosenClothes);
@@ -373,8 +386,8 @@ const Order = () => {
             </thead>
             <tbody>
               <tr>
-                <td style={{ border: '1px solid black', padding: '5px', height: '30px' }}>{customerDateSend}</td>
-                <td style={{ border: '1px solid black', padding: '5px', height: '30px' }}>{customerDateReturn}</td>
+                <td style={{ border: '1px solid black', padding: '5px', height: '30px' }}>{deliveryDate}</td>
+                <td style={{ border: '1px solid black', padding: '5px', height: '30px' }}>{returnDate}</td>
               </tr>
             </tbody>
           </table>
@@ -463,16 +476,24 @@ const Order = () => {
       updateDoc(clothRef, {
         Available: false
       });
+      // const clothe = clothes.find((c) => c.id === id);
+      // console.log(clothe);
+      // const { RentalFee, DepositFee } = clothe;
+      const cloth = clothes.find((c) => c.id === id);
+      console.log(cloth);
 
-      return { id: id, Returned: false };
+      return { id: id, Returned: false, RentalFee: cloth.RentalFee, DepositFee: cloth.Deposit };
     });
     const timeStamps = new Date();
     const newBill = {
       Name: customerName,
       Number: customerNumber,
       Address: customerAddress,
+      DeliveryDate: deliveryDate,
+      ReturnDate: returnDate,
       TotalPrice: totalPrice,
       TotalDepositFee: totalDepositFee,
+      TotalRentFee: totalRentFee,
       Date: timeStamps,
       clothesRented: clothesRented,
       Returned: false
@@ -505,7 +526,7 @@ const Order = () => {
   }, [chosenClothes]);
 
   useEffect(() => {
-    findAllClothes();
+    // findAllClothes();
   }, []);
 
   return (
@@ -517,6 +538,7 @@ const Order = () => {
         <thead>
           <tr>
             <th>Hình ảnh</th>
+            <th>Loại</th>
             <th>Thương hiệu</th>
             <th>Màu sắc</th>
             <th>Hình dạng</th>
@@ -538,6 +560,14 @@ const Order = () => {
                 <option value="Female">Female</option>
               </select>
               &nbsp; */}
+              Loại:
+              <select id='kindFilter' name="Kind" onChange={(e) => handleFilter('kindFilter', e.target.value)}>
+                <option value="">All</option>
+                <option value="Quần áo">Quần áo</option>
+                <option value='Phụ kiện'>Phụ kiện</option>
+                <option value='Khác'>Khác</option>
+              </select>
+
               Size:
               <select id='sizeFilter' onChange={(e) => handleFilter('sizeFilter', e.target.value)}>
                 <option value="">All</option>
@@ -550,28 +580,14 @@ const Order = () => {
               Màu sắc:
               <select id='colorFilter' name="Color" onChange={(e) => handleFilter('colorFilter', e.target.value)}>
                 <option value="">All</option>
-                <option value="Red">Red</option>
-                <option value="Blue">Blue</option>
-                <option value="Green">Green</option>
-                <option value="Yellow">Yellow</option>
-                <option value="Black">Black</option>
-                <option value="White">White</option>
-                <option value="Grey">Grey</option>
-                <option value="Brown">Brown</option>
-                <option value="Purple">Purple</option>
-                <option value="Pink">Pink</option>
-                <option value="Orange">Orange</option>
-                <option value="Cyan">Cyan</option>
-                <option value="Magenta">Magenta</option>
-                <option value="Lime">Lime</option>
-                <option value="Teal">Teal</option>
-                <option value="Indigo">Indigo</option>
-                <option value="Violet">Violet</option>
-                <option value="Fuchsia">Fuchsia</option>
-                <option value="Gold">Gold</option>
-                <option value="Silver">Silver</option>
-                <option value="Bronze">Bronze</option>
-                <option value="Other">Khác</option>
+                <option value="Khác">Khác</option>
+                <option value="Đỏ">Đỏ</option>
+                <option value="Trằng">Trắng</option>
+                <option value="Kem">Kem</option>
+                <option value="Đỏ">Đỏ</option>
+                <option value="Hồng">Hồng</option>
+                <option value="Váy Hoa">Váy Hoa</option>
+                <option value="Vàng">Vàng</option>
               </select>
               Dạng:
               <input id="typeFilter" type="text" name="Type" onChange={(e) => handleFilter('typeFilter', e.target.value)} />
@@ -582,6 +598,7 @@ const Order = () => {
           {clothes.map((cloth) => (
             <tr row={`row-${cloth.id}`} key={cloth.id} style={{ borderBottom: '1px solid #ddd' }}>
               <td><img src={cloth.imageUrl} alt={cloth.Type} style={{ width: '100px' }} /></td>
+              <th>{cloth.Kind}</th>
               <td>{cloth.Brand}</td>
               <td>{cloth.Color}</td>
               <td>{cloth.Type}</td>
