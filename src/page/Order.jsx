@@ -4,6 +4,7 @@ import Modal from 'react-modal';
 import { getDatabase, ref, onValue } from "firebase/database";
 import { deleteDoc, onSnapshot, collection, getDocs, updateDoc, doc, addDoc, query, where } from "firebase/firestore";
 import { firestore } from '../service/firebase';
+import { set } from 'date-fns';
 
 Modal.setAppElement('#root');
 
@@ -20,6 +21,8 @@ const Order = () => {
   const [isOrderPlaced, setIsOrderPlaced] = useState(false);
   const [isBillPrintable, setIsBillPrintable] = useState(false);
 
+  const [updateSelection, setUpdateSelection] = useState(false);
+
 
   // const [genderFilter, setGenderFilter] = useState('');
   const [sizeFilter, setSizeFilter] = useState('');
@@ -28,6 +31,9 @@ const Order = () => {
   const [customerName, setCustomerName] = useState('');
   const [customerNumber, setCustomerNumber] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
+
+  const [customerDateSend, setCustomerDateSend] = useState('');
+  const [customerDateReturn, setCustomerDateReturn] = useState('');
 
   const [bill, setBill] = useState('');
 
@@ -43,27 +49,59 @@ const Order = () => {
     setCustomerAddress(e.target.value);
   };
 
+  const handleChangeDateSend = (e) => {
+    setCustomerDateSend(e.target.value);
+  };
+  const handleChangeDateReturn = (e) => {
+    setCustomerDateReturn(e.target.value);
+  };
+
   const handleChooseOption = (id, option) => {
-    const cloth = chosenClothes.find((c) => c.id === id);
-    const clothRow = document.querySelector(`tr[row="row-${id}"]`);
-    if (clothRow) {
-      clothRow.style.backgroundColor = option ? 'lightgreen' : 'white';
-    }
-    if (!cloth) {
-      setChosenClothes([...chosenClothes, { id, option }]);
-      console.log(chosenClothes);
-      setTotalRentFee(totalRentFee + clothes.find((c) => c.id === id).RentalFee);
-      setTotalDepositFee(totalDepositFee + clothes.find((c) => c.id === id).Deposit);
-      setTotalPrice(totalPrice + clothes.find((c) => c.id === id).RentalFee + clothes.find((c) => c.id === id).Deposit);
-    } else {
-      if (!option) {
-        setChosenClothes(chosenClothes.filter((c) => c.id !== id));
-        setTotalPrice(totalPrice - clothes.find((c) => c.id === id).RentalFee - clothes.find((c) => c.id === id).Deposit);
-      } else {
-        setChosenClothes(chosenClothes.map((c) => (c.id === id ? { ...c, option } : c)));
-        setTotalPrice(totalPrice + clothes.find((c) => c.id === id).RentalFee + clothes.find((c) => c.id === id).Deposit);
+    console.log('Cloth:', id, option);
+    if (option === 'select') {
+      if (!chosenClothes.includes(id)) {
+        setChosenClothes([...chosenClothes, id]);
       }
+      const clothRow = document.querySelector(`tr[row="row-${id}"]`);
+      clothRow.style.backgroundColor = 'lightgreen';
     }
+    else {
+      setChosenClothes(chosenClothes.filter((c) => c !== id));
+      const clothRow = document.querySelector(`tr[row="row-${id}"]`);
+      clothRow.style.backgroundColor = 'white';
+    }
+
+    // if (option === 'select') {
+    //   //check if the cloth is in array of chosenClothes return true false
+    //   if (chosenClothes.includes(id)) {
+    //     setChosenClothes([...chosenClothes, id]);
+    //   }
+    //   console.log('Cloth:', id, option);
+    // }
+    // else {
+    //   //remove the cloth from array of chosenClothes
+    // }
+
+    // const clothRow = document.querySelector(`tr[row="row-${id}"]`);
+    // if (clothRow) {
+    //   clothRow.style.backgroundColor = chosenClothes.find(id) ? 'lightgreen' : 'white';
+    // }
+
+    // const cloth = chosenClothes.find((c) => c.id === id);
+    // const clothRow = document.querySelector(`tr[row="row-${id}"]`);
+    // if (clothRow) {
+    //   clothRow.style.backgroundColor = option ? 'lightgreen' : 'white';
+    // }
+    // if (!cloth) {
+    //   console.log('Cloth:', id, option);
+    //   setChosenClothes([...chosenClothes, id]);
+    // } else {
+    //   if (!option) {
+    //     setChosenClothes(chosenClothes.filter((c) => c.id !== id));
+    //   } else {
+    //     setChosenClothes(chosenClothes.map((c) => (c.id === id ? { ...c, option } : c)));
+    //   }
+    // }
   };
 
   const handleFilter = async (type, value) => {
@@ -92,9 +130,13 @@ const Order = () => {
 
 
   const handleOrder = () => {
+    if (chosenClothes.length === 0) {
+      alert('Chưa chọn sản phẩm nào');
+      return;
+    }
     // let totalPrice = 0;
-    chosenClothes.forEach((cloth) => {
-      const clothObj = clothes.find((c) => c.id === cloth.id);
+    chosenClothes.forEach((id) => {
+      const clothObj = clothes.find((c) => c.id === id);
       // totalPrice += clothObj.RentalFee + clothObj.Deposit;
       // console.log(totalPrice);
     });
@@ -102,13 +144,26 @@ const Order = () => {
     setIsModalOpen(true);
   };
 
+  const resetAllChosen = () => {
+    chosenClothes.forEach((id) => {
+      const clothRow = document.querySelector(`tr[row="row-${id}"]`);
+      if (clothRow) {
+        clothRow.style.backgroundColor = 'white';
+      }
+    });
+    setChosenClothes([]);
+    setTotalPrice(0);
+    setIsOrderPlaced(false);
+    setIsBillPrintable(false);
+  }
+
   const closeModal = () => {
     setIsModalOpen(false);
     if (isOrderPlaced) {
       setChosenClothes([]);
       setTotalPrice(0);
-      chosenClothes.forEach((cloth) => {
-        const clothRow = document.querySelector(`tr[row="row-${cloth.id}"]`);
+      chosenClothes.forEach((id) => {
+        const clothRow = document.querySelector(`tr[row="row-${id}"]`);
         if (clothRow) {
           clothRow.style.backgroundColor = 'white';
         }
@@ -119,16 +174,16 @@ const Order = () => {
   };
 
   const handleDeleteOrder = () => {
-    chosenClothes.forEach((cloth) => {
-      const clothRow = document.querySelector(`tr[row="row-${cloth.id}"]`);
+    chosenClothes.forEach((id) => {
+      const clothRow = document.querySelector(`tr[row="row-${id}"]`);
       if (clothRow) {
         clothRow.style.backgroundColor = 'white';
       }
     });
     //delete order from firestore
     const clothesCollectionRef = collection(firestore, 'clothes');
-    chosenClothes.forEach((clothe) => {
-      const clothesId = clothe.id;
+    chosenClothes.forEach((id) => {
+      const clothesId = id;
       const docPath = String(clothesId); // Ensure clothesId is converted to string
       try {
         updateDoc(doc(clothesCollectionRef, docPath), {
@@ -149,6 +204,7 @@ const Order = () => {
     }
     setChosenClothes([]);
     setTotalPrice(0);
+    setTotalDepositFee(0);
     setIsOrderPlaced(false);
     setIsBillPrintable(false);
     setIsModalOpen(false);
@@ -159,28 +215,18 @@ const Order = () => {
       const clothesData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
       setClothes(clothesData);
     });
-    // const fetchClothes = async () => {
-    //   const items = await addClothingItem(); // Await the result of addClothingItem
-    //   setClothes(items);
-    // };
-    // fetchClothes();
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
+    console.log(chosenClothes);
+  }, [chosenClothes]);
+
+  useEffect(() => {
     console.log(sizeFilter, colorFilter);
     const fetchClothes = async () => {
-      if (sizeFilter === '' && colorFilter === '' && typeFilter === '') {
-        const q = query(collection(firestore, "clothes"));
-        const querySnapshot = await getDocs(q);
-        const clothesList = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setClothes(clothesList);
-        return;
-      }
       let q = collection(firestore, "clothes");
+
       if (sizeFilter !== '') {
         q = query(q, where("Size", "==", sizeFilter));
       }
@@ -190,6 +236,11 @@ const Order = () => {
       if (typeFilter !== '') {
         q = query(q, where("Type", "==", typeFilter));
       }
+
+      if (sizeFilter === '' && colorFilter === '' && typeFilter === '') {
+        q = collection(firestore, "clothes");
+      }
+
       const querySnapshot = await getDocs(q);
       const clothesList = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -199,27 +250,90 @@ const Order = () => {
       setClothes(clothesList);
     };
     fetchClothes();
+    //check clothes in chosenClothes and highlight them
+    console.log(chosenClothes);
+    chosenClothes.forEach((id) => {
+      const clothRow = document.querySelector(`tr[row="row-${id}"]`);
+      if (clothRow) {
+        clothRow.style.backgroundColor = 'lightgreen';
+        //find id select-option and change value to select
+        const selectOption = document.getElementById('choose-option');
+        console.log(selectOption);
+        if (selectOption) {
+          selectOption.value = 'select';
+        }
+        console.log(selectOption);
+      }
+    });
   }, [sizeFilter, colorFilter, typeFilter]);
 
 
+
+  useEffect(() => {
+    chosenClothes.forEach((id) => {
+      const clothRow = document.querySelector(`tr[row="row-${id}"]`);
+      if (clothRow) {
+        clothRow.style.backgroundColor = 'lightgreen';
+      }
+    });
+    setUpdateSelection(true)
+  }, [clothes]);
+
+  useEffect(() => {
+    setUpdateSelection(false);
+  }, [updateSelection]);
+
+  const handleSelectOption = (id) => {
+    const clothRow = document.querySelector(`tr[row="row-${id}"]`);
+    if (clothRow) {
+      //if its background color is green, return select
+      if (clothRow.style.backgroundColor === 'lightgreen') {
+        return 'select';
+      }
+    }
+    return '';
+  }
+
+  const resetFilters = () => {
+    setSizeFilter('');
+    setcolorFilter('');
+    setTypeFilter('');
+    //input to default value
+    document.getElementById('sizeFilter').value = '';
+    document.getElementById('colorFilter').value = '';
+    document.getElementById('typeFilter').value = '';
+
+    //check clothes in chosenClothes and highlight them
+    console.log(chosenClothes);
+    chosenClothes.forEach((id) => {
+      const clothRow = document.querySelector(`tr[row="row-${id}"]`);
+      if (clothRow) {
+        clothRow.style.backgroundColor = 'lightgreen';
+      }
+    });
+  };
+
+
   const PrintModalContent = () => {
-    const TotalRentFee = chosenClothes.reduce((acc, cloth) => {
-      const clothObj = clothes.find((c) => c.id === cloth.id);
+    const TotalRentFee = chosenClothes.reduce((acc, id) => {
+      const clothObj = clothes.find((c) => c.id === id);
       return acc + clothObj.RentalFee;
     }, 0);
-    const TotalDepositFee = chosenClothes.reduce((acc, cloth) => {
-      const clothObj = clothes.find((c) => c.id === cloth.id);
+    const TotalDepositFee = chosenClothes.reduce((acc, id) => {
+      const clothObj = clothes.find((c) => c.id === id);
       return acc + clothObj.Deposit;
     }, 0);
     const TotalPrice = TotalRentFee + TotalDepositFee;
+    setTotalPrice(TotalPrice);
+    setTotalDepositFee(TotalDepositFee);
+    setTotalRentFee(TotalRentFee);
     return (
       <div>
         <img src="rent-clothes/b2.png" alt="Kalynn.store" style={{ width: '25%', float: 'right' }} />
-        <div className='print-customer-info' style={{display: 'none'}}>
-          <p><strong>Tên Khách hàng:</strong> {customerName} <strong>Số điện thoại:</strong> {customerNumber}</p>
-          <p><strong>Địa chỉ:</strong> {customerAddress}</p>
+        <div className='print-customer-info' style={{ display: 'none' }}>
+          <p><strong>Khách hàng:</strong> {customerName} <strong>Điện thoại:</strong> {customerNumber} <strong>Địa chỉ:</strong> {customerAddress}</p>
         </div>
-        <table>
+        <table style={{ fontSize: '14px' }}>
           <thead>
             <tr>
               <th>Số thứ tự</th>
@@ -231,24 +345,24 @@ const Order = () => {
             </tr>
           </thead>
           <tbody>
-            {chosenClothes.map((cloth, index) => {
-              const clothObj = clothes.find((c) => c.id === cloth.id);
+            {chosenClothes.map((id, index) => {
+              const clothObj = clothes.find((c) => c.id === id);
               return (
-                <tr key={cloth.id}>
+                <tr key={id}>
                   <td>{index + 1}</td>
                   <td>{clothObj.Color}</td>
                   <td>{clothObj.Type}</td>
                   <td>{clothObj.Size}</td>
-                  <td>{clothObj.RentalFee} đồng</td>
-                  <td>{clothObj?.Deposit} đồng</td>
+                  <td>{clothObj.RentalFee.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</td>
+                  <td>{clothObj?.Deposit.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        <p style={{ fontSize: '9px', marginRight: '20px', textAlign: 'right' }}><strong>Tiền đặt cọc:</strong> {TotalDepositFee.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
-        <p style={{ fontSize: '9px', marginRight: '20px', textAlign: 'right' }}><strong>Tiền thuê:</strong> {TotalRentFee.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
-        <p style={{ borderTop:'1px solid black', paddingTop:'5px', fontSize: '12px', marginRight: '20px', textAlign: 'right' }}><strong>Tổng số tiền:</strong>  {TotalPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
+        <p style={{ fontSize: '16px', marginRight: '20px', textAlign: 'right' }}><strong>Tiền đặt cọc:</strong> {TotalDepositFee.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
+        <p style={{ fontSize: '16px', marginRight: '20px', textAlign: 'right' }}><strong>Tiền thuê:</strong> {TotalRentFee.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
+        <p style={{ borderTop: '1px solid black', paddingTop: '5px', fontSize: '18px', marginRight: '20px', textAlign: 'right' }}><strong>Tổng số tiền:</strong>  {TotalPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
         <div className='print-non-display' style={{ display: 'none' }}>
           <table style={{ borderCollapse: 'collapse', width: '50%', margin: '4px' }}>
             <thead>
@@ -259,8 +373,8 @@ const Order = () => {
             </thead>
             <tbody>
               <tr>
-                <td style={{ border: '1px solid black', padding: '5px', height: '30px' }}></td>
-                <td style={{ border: '1px solid black', padding: '5px', height: '30px' }}></td>
+                <td style={{ border: '1px solid black', padding: '5px', height: '30px' }}>{customerDateSend}</td>
+                <td style={{ border: '1px solid black', padding: '5px', height: '30px' }}>{customerDateReturn}</td>
               </tr>
             </tbody>
           </table>
@@ -327,8 +441,8 @@ const Order = () => {
     const clothesCollectionRef = collection(firestore, 'clothes');
 
     // Loop through each chosenClothes and update its available status
-    for (const clothe of chosenClothes) {
-      const clothesId = clothe.id;
+    for (const id of chosenClothes) {
+      const clothesId = id;
       const docPath = String(clothesId); // Ensure clothesId is converted to string
       try {
         await updateDoc(doc(clothesCollectionRef, docPath), {
@@ -342,15 +456,15 @@ const Order = () => {
     //add new bill to firestore
     const BillRef = collection(firestore, 'bills');
     //array of clothes rented
-    const clothesRented = chosenClothes.map((cloth) => {
+    const clothesRented = chosenClothes.map((id) => {
       // const clothObj = clothes.find((c) => c.id === cloth.id);
       //update cloth in clothes collection to not available
-      const clothRef = doc(firestore, 'clothes', cloth.id);
+      const clothRef = doc(firestore, 'clothes', id);
       updateDoc(clothRef, {
         Available: false
       });
 
-      return { id: cloth.id, Returned: false };
+      return { id: id, Returned: false };
     });
     const timeStamps = new Date();
     const newBill = {
@@ -396,7 +510,9 @@ const Order = () => {
 
   return (
     <div>
-      <h1>Order</h1>
+      <h2>Đặt hàng</h2>
+      <button style={{ padding: '10px 20px', marginRight: '10px', fontSize: '16px', backgroundColor: 'lightblue', border: 'none', borderRadius: '5px', cursor: 'pointer' }} onClick={handleOrder}>Đặt các hàng đã chọn {countChosenClothes}</button>
+      <button style={{ padding: '10px 20px', marginRight: '10px', fontSize: '16px', backgroundColor: 'lightyellow', border: 'none', borderRadius: '5px', cursor: 'pointer' }} onClick={resetAllChosen}>Bỏ chọn tất cả</button>
       <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
         <thead>
           <tr>
@@ -412,6 +528,7 @@ const Order = () => {
           </tr>
           <tr>
             <td colSpan="6" style={{ backgroundColor: '#f2f2f2', padding: '5px' }}>
+              <button style={{ backgroundColor: 'lightyellow' }} onClick={resetFilters}>Hiện tất cả</button>
               <strong>Filter:</strong>&nbsp;
               {/* Gender:
               <select onChange={(e) => handleFilter('genderFilter', e.target.value)}>
@@ -422,7 +539,7 @@ const Order = () => {
               </select>
               &nbsp; */}
               Size:
-              <select onChange={(e) => handleFilter('sizeFilter', e.target.value)}>
+              <select id='sizeFilter' onChange={(e) => handleFilter('sizeFilter', e.target.value)}>
                 <option value="">All</option>
                 <option value="S">S</option>
                 <option value="XS">XS</option>
@@ -430,8 +547,8 @@ const Order = () => {
                 <option value="L">L</option>
                 <option value="XL">XL</option>
               </select>
-              Color:
-              <select name="Color" onChange={(e) => handleFilter('colorFilter', e.target.value)}>
+              Màu sắc:
+              <select id='colorFilter' name="Color" onChange={(e) => handleFilter('colorFilter', e.target.value)}>
                 <option value="">All</option>
                 <option value="Red">Red</option>
                 <option value="Blue">Blue</option>
@@ -457,7 +574,7 @@ const Order = () => {
                 <option value="Other">Khác</option>
               </select>
               Dạng:
-              <input type="text" name="Type" onChange={(e) => handleFilter('typeFilter', e.target.value)} />
+              <input id="typeFilter" type="text" name="Type" onChange={(e) => handleFilter('typeFilter', e.target.value)} />
             </td>
           </tr>
         </thead>
@@ -468,46 +585,54 @@ const Order = () => {
               <td>{cloth.Brand}</td>
               <td>{cloth.Color}</td>
               <td>{cloth.Type}</td>
-              <td>{cloth.RentalFee} đồng</td>
-              <td>{cloth.Deposit} đồng</td>
-              <td>{cloth.Size}</td>
+              <td>{cloth.RentalFee.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</td>
+              <td>{cloth.Deposit.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</td>
+              <td>{cloth.Size.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
               {/* <td>{cloth.Gender}</td> */}
               <td>
                 {
                   cloth.Available ?
-                    <select onChange={(e) => handleChooseOption(cloth.id, e.target.value)}>
-                      <option value="">Choose an option</option>
-                      <option value="option1">Choose</option>
-                    </select> : <button disabled>Not Available</button>
+                    <select value={handleSelectOption(cloth.id)} id='choose-option' onChange={(e) => handleChooseOption(cloth.id, e.target.value)}>
+                      <option value="select">Chọn</option>
+                      <option value="">Lựa chọn</option>
+                    </select> : <button disabled>Không còn hàng</button>
                 }
               </td>
             </tr>
           ))}
         </tbody>
       </table>
-      <button onClick={handleOrder}>Place Order {countChosenClothes}</button>
       <Modal isOpen={isModalOpen} onRequestClose={closeModal}>
         <PrintModalContent />
-        <label style={{ margin: '5px' }}>
+        <label style={{ margin: '5px', display: 'flex', alignItems: 'center' }}>
           Họ tên:
-          <input type="text" name="Name" onChange={handleChangeName} />
+          <input style={{ marginLeft: '5px', padding: '5px', borderRadius: '5px', border: '1px solid lightgrey' }} type="text" name="Name" onChange={handleChangeName} />
         </label>
-        <label style={{ margin: '5px' }}>
+        <label style={{ margin: '5px', display: 'flex', alignItems: 'center' }}>
           Số điện thoại:
-          <input type="number" name="Number" onChange={handleChangeNumber} />
+          <input style={{ marginLeft: '5px', padding: '5px', borderRadius: '5px', border: '1px solid lightgrey' }} type="number" name="Number" onChange={handleChangeNumber} />
         </label>
-        <address style={{ margin: '5px' }}>
+        <label style={{ margin: '5px', display: 'flex', alignItems: 'center' }}>
           Địa chỉ:
-          <textarea type="text" name="Address" onChange={handleChangeAddress} />
-        </address>
-        <p><strong>Tiền thuê:</strong> {totalRentFee.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
-        <p><strong>Tiền đặt cọc:</strong> {totalDepositFee.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
-        <p><strong>Tổng số tiền:</strong> {totalPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })} đồng</p>
-        <button onClick={handlePlaceOrder} disabled={isOrderPlaced}>Đặt Hàng</button>
-        <button onClick={handlePrintBill} disabled={!isBillPrintable}>In Bill</button>
-        <button onClick={closeModal}>Close</button>
-        <button onClick={handleDeleteOrder} disabled={isOrderPlaced}>Delete Order</button>
+          <textarea style={{ marginLeft: '5px', padding: '5px', borderRadius: '5px', border: '1px solid lightgrey' }} type="text" name="Address" onChange={handleChangeAddress} />
+        </label>
+        <label style={{ margin: '5px', display: 'flex', alignItems: 'center' }}>
+          Ngày giao:
+          <textarea style={{ marginLeft: '5px', padding: '5px', borderRadius: '5px', border: '1px solid lightgrey' }} type="text" name="Address" onChange={handleChangeDateSend} />
+        </label>
+        <label style={{ margin: '5px', display: 'flex', alignItems: 'center' }}>
+          Ngày trả:
+          <textarea style={{ marginLeft: '5px', padding: '5px', borderRadius: '5px', border: '1px solid lightgrey' }} type="text" name="Address" onChange={handleChangeDateReturn} />
+        </label>
+
+        <div style={{ margin: '5px' }}>
+          <button style={{ backgroundColor: 'lightblue', marginRight: '10px', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer', border: 'none' }} onClick={handlePlaceOrder} disabled={isOrderPlaced}>Đặt Hàng</button>
+          <button style={{ marginRight: '10px', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer', border: 'none' }} onClick={handlePrintBill} disabled={!isBillPrintable}>In Bill</button>
+          <button style={{ backgroundColor: 'lightyellow', marginRight: '10px', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer', border: 'none' }} onClick={closeModal}>Close</button>
+          <button style={{ backgroundColor: '#FF3333', padding: '10px 20px', borderRadius: '5px', cursor: 'pointer', border: 'none' }} onClick={handleDeleteOrder} disabled={!isOrderPlaced}>Xóa đơn hàng</button>
+        </div>
       </Modal>
+
     </div>
   );
 };

@@ -10,6 +10,7 @@ import Bill from './Bill';
 import DashBoard from './DashBoard';
 import Order from './Order';
 import AllProducts from './AllProducts';
+import AllBill from './AllBill';
 
 
 const HomePage = () => {
@@ -88,9 +89,9 @@ const HomePage = () => {
         <div>
             <div>
                 {user ? (
-                    <div>
-                        <p>Welcome, {user.email}!</p>
-                        <button onClick={signOut}>Sign Out</button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        <p style={{ marginRight: '10px' }}>Welcome, {user.email}!</p>
+                        <button onClick={signOut} style={{ fontSize: '14px', padding: '5px 10px' }}>Sign Out</button>
                     </div>
                 ) : (
                     <div>
@@ -98,18 +99,18 @@ const HomePage = () => {
                         <button onClick={signIn}>Sign In</button>
                     </div>
                 )}
-                <h1>Kalynn shop</h1>
                 {/* <div>
                     <button onClick={createNewUser}>Create New User</button>
                 </div> */}
             </div>
             {/* addtab to render different component */}
             <div>
-                <button onClick={() => setSelectedTab('home')}>Home</button>
-                <button onClick={() => setSelectedTab('order')}>Đặt hàng</button>
-                <button onClick={() => setSelectedTab('dashboard')}>Thêm hàng</button>
-                <button onClick={() => setSelectedTab('bill')}>Trả hàng</button>
-                <button onClick={() => setSelectedTab('all-products')}>Thay đổi, xóa hàng</button>
+                <button style={{ padding: '10px 20px', marginRight: '10px', fontSize: '16px', backgroundColor: 'lightgreen', border: 'none', borderRadius: '5px', cursor: 'pointer' }} onClick={() => setSelectedTab('home')}>Home</button>
+                <button style={{ padding: '10px 20px', marginRight: '10px', fontSize: '16px', backgroundColor: 'lightblue', border: 'none', borderRadius: '5px', cursor: 'pointer' }} onClick={() => setSelectedTab('order')}>Đặt hàng</button>
+                <button style={{ padding: '10px 20px', marginRight: '10px', fontSize: '16px', backgroundColor: 'lightblue', border: 'none', borderRadius: '5px', cursor: 'pointer' }} onClick={() => setSelectedTab('bill')}>Trả hàng</button>
+                <button style={{ padding: '10px 20px', marginRight: '10px', fontSize: '16px', backgroundColor: '#FF6666', border: 'none', borderRadius: '5px', cursor: 'pointer' }} onClick={() => setSelectedTab('dashboard')}>Thêm hàng</button>
+                <button style={{ padding: '10px 20px', marginRight: '10px', fontSize: '16px', backgroundColor: '#FF6666', border: 'none', borderRadius: '5px', cursor: 'pointer' }} onClick={() => setSelectedTab('all-products')}>Thay đổi, xóa hàng</button>
+                <button style={{ padding: '10px 20px', fontSize: '16px', backgroundColor: 'lightgreen', border: 'none', borderRadius: '5px', cursor: 'pointer' }} onClick={() => setSelectedTab('all-bill')}>Xem hóa đơn</button>
             </div>
             {
                 selectedTab === 'home' && <h1>Home</h1>
@@ -125,6 +126,9 @@ const HomePage = () => {
             }
             {
                 selectedTab === 'all-products' && <AllProducts />
+            }
+            {
+                selectedTab === 'all-bill' && <AllBill />
             }
         </div>
     );

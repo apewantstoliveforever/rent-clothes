@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getDoc, updateDoc, doc, orderBy } from "firebase/firestore";
+import { getDoc, updateDoc, doc, startAfter } from "firebase/firestore";
 import { firestore } from '../service/firebase';
-import { onSnapshot, query, collection, where } from "firebase/firestore";
+import { startAt, orderBy, onSnapshot, query, collection, where, getCountFromServer, limit } from "firebase/firestore";
 import { format } from 'date-fns';
 
 const Cloth = ({ cloth }) => {
@@ -13,7 +13,6 @@ const Cloth = ({ cloth }) => {
             try {
                 const clothSnap = await getDoc(clothRef);
                 const clothData = clothSnap.data();
-                console.log('Cloth data:', clothData);
                 setClothData(clothData);
             } catch (error) {
                 console.error('Error fetching cloth data:', error.message);
@@ -26,7 +25,7 @@ const Cloth = ({ cloth }) => {
         <div>
             {clothData && (
                 <div>
-                    <img src={clothData.imageUrl} alt={cloth.Type} style={{ width: '100px' }} />
+                    {/* <img src={clothData.imageUrl} alt={cloth.Type} style={{ width: '100px' }} /> */}
                     <span style={{ marginLeft: '10px' }}>{clothData.Color}</span>
                     <span style={{ marginLeft: '10px' }}>{clothData.Type}</span>
                     <span style={{ marginLeft: '10px' }}>{clothData.Deposit}</span>
@@ -36,16 +35,43 @@ const Cloth = ({ cloth }) => {
     );
 };
 
-const Bill = () => {
+const AllBill = () => {
     const [bills, setBills] = useState([]);
     const [filteredBills, setFilteredBills] = useState([]);
+    const [pageCount, setPageCount] = useState(1);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [mounted, setMounted] = useState(false);
+
+
+    const handlePageDecrease = () => {
+        if (currentPage === 1) return;
+        setCurrentPage(currentPage - 1);
+    }
+
+    const handlePageIncrease = () => {
+        if (currentPage === pageCount) return;
+        setCurrentPage(currentPage + 1);
+    }
 
     useEffect(() => {
-        const unsubscribe = onSnapshot(query(collection(firestore, 'bills'), where('Returned', '==', false)), (snapshot) => {
+        const numberOfBills = async () => {
+            const billRef = collection(firestore, 'bills');
+            const billSnap = await getCountFromServer(billRef);
+            const count = Number(billSnap._data.count.integerValue);
+            setPageCount(Math.ceil(count / 10));
+        }
+        numberOfBills();
+
+        let q = collection(firestore, "bills");
+        // Get the last visible document
+        q = query(q, orderBy("Date", "desc"), limit(100));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
             const billsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
             setBills(billsData);
             setFilteredBills(billsData);
         });
+
+        setMounted(true);
         return () => unsubscribe();
     }, []);
 
@@ -58,14 +84,13 @@ const Bill = () => {
             const clothRef = doc(firestore, 'clothes', cloth.id);
             await updateDoc(clothRef, { Available: true });
 
-            // Update clothesRented array in bill
             const updatedClothesRented = billData.clothesRented.map(c => (c.id === cloth.id ? cloth : c));
             await updateDoc(billRef, {
                 clothesRented: updatedClothesRented,
                 Returned: updatedClothesRented.every(c => c.Returned)
             });
 
-            console.log(updatedClothesRented.every(c => c.Returned) ? 'Bill returned' : 'Cloth returned');
+            // console.log(updatedClothesRented.every(c => c.Returned) ? 'Bill returned' : 'Cloth returned');
         } catch (error) {
             console.error('Error returning cloth or updating bill: ', error.message);
         }
@@ -78,14 +103,11 @@ const Bill = () => {
             bill.Number.toLowerCase().includes(searchValue)
         );
         setFilteredBills(filteredBills);
-        console.log(filteredBills);
     };
 
     const resetSearchInput = () => {
-        // Reset search input fields
         document.getElementById('searchByName').value = '';
         document.getElementById('searchByPhoneNumber').value = '';
-        // Reset filtered bills to show all bills
         setFilteredBills(bills);
     };
 
@@ -94,21 +116,35 @@ const Bill = () => {
         return formattedDate;
     }
 
+    // useEffect(() => {
+    // console.log('currentPage3', currentPage);
+    //     if (mounted) {
+    //         console.log('currentPage', currentPage);
+    //         let q = collection(firestore, "bills");
+    //         q = query(q, orderBy("Date", "desc"), limit(100) );
+    //         const unsubscribe = onSnapshot(q, (snapshot) => {
+    //         console.log('snapshot', snapshot);
+    //             const billsData = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    //             console.log('billsData', billsData);
+    //             setBills(billsData);
+    //             setFilteredBills(billsData);
+    //         });
+    //         return () => unsubscribe();
+    //     }
+    // }, [currentPage]);
 
     return (
         <div>
-            <h2 style={{ marginBottom: '20px' }}>Trả hàng</h2>
-            {/* search name */}
-            <input id="searchByName" onChange={handleSearch} type="text" placeholder="Tìm theo tên" />
-            <input id="searchByPhoneNumber" onChange={handleSearch} type="text" placeholder="Tìm theo số điện thoại" />
-            {/* Reset search button */}
-            <button style={{backgroundColor: 'lightyellow'}} onClick={resetSearchInput}>Hiện tất cả</button>
+            <h2 style={{ marginBottom: '20px' }}>Thêm hóa đơn</h2>
+            <input id="searchByName" onChange={handleSearch} type="text" placeholder="Tìm kiếm theo tên" />
+            <input id="searchByPhoneNumber" onChange={handleSearch} type="text" placeholder="Tìm kiếm số điện thoại" />
+            <button onClick={resetSearchInput}>Hiện tất cả</button>
             <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #ddd' }}>
                 <thead>
                     <tr>
                         <th style={{ border: '1px solid black', padding: '10px', textAlign: 'left' }}>Bill ID</th>
                         <th style={{ border: '1px solid black', padding: '10px', textAlign: 'left' }}>Ngày nhập</th>
-                        <th style={{ border: '1px solid black', padding: '10px', textAlign: 'left' }}>Khác hàng</th>
+                        <th style={{ border: '1px solid black', padding: '10px', textAlign: 'left' }}>Khách hàng</th>
                         <th style={{ border: '1px solid black', padding: '10px', textAlign: 'left' }}>Số điện thoại</th>
                         <th style={{ border: '1px solid black', padding: '10px', textAlign: 'left' }}>Địa chỉ</th>
                         <th style={{ border: '1px solid black', padding: '10px', textAlign: 'left' }}>Tiền đã cọc</th>
@@ -124,12 +160,11 @@ const Bill = () => {
                             <td style={{ border: '1px solid black', padding: '10px' }}>{bill.Name}</td>
                             <td style={{ border: '1px solid black', padding: '10px' }}>{bill.Number}</td>
                             <td style={{ border: '1px solid black', padding: '10px' }}>{bill.Address}</td>
-                            <td style={{ border: '1px solid black', padding: '10px' }}>{bill.TotalDepositFee}</td>
+                            <td style={{ border: '1px solid black', padding: '10px' }}>{bill.TotalDepositFee.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
                             <td style={{ border: '1px solid black', padding: '10px' }}>{bill.TotalPrice.toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
                             <td style={{ border: '1px solid black', padding: '10px' }}>
                                 {bill.clothesRented.map((cloth, index) => (
                                     <div key={index} style={{ border: '1px solid black', marginBottom: '5px' }}>
-                                        {/* <span>{cloth.id}</span> */}
                                         <Cloth cloth={cloth} />
                                         {!cloth.Returned ? (
                                             <button
@@ -139,7 +174,7 @@ const Bill = () => {
                                                 Trả
                                             </button>
                                         ) : (
-                                            <span style={{ marginLeft: '10px', color: 'green' }}>Trả hàng</span>
+                                            <span style={{ marginLeft: '10px', color: 'green' }}>Đã trả</span>
                                         )}
                                     </div>
                                 ))}
@@ -148,8 +183,11 @@ const Bill = () => {
                     ))}
                 </tbody>
             </table>
+            <button onClick={handlePageDecrease}>Trang trước</button>
+            <span>{currentPage}</span>
+            <button onClick={handlePageIncrease}>Trang sau</button>
         </div>
     );
 };
 
-export default Bill;
+export default AllBill;
