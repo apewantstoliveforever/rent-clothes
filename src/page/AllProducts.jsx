@@ -21,6 +21,14 @@ const AllProducts = () => {
     });
     const database = getDatabase();
 
+    const [isDeletePopupOpen, setIsDeletePopupOpen] = useState(false);
+    const [chosenDeleteId, setChosenDeleteId] = useState(''); // Track the ID of the item being deleted
+
+    const toggleDeletePopup = () => {
+        console.log('Toggle delete popup');
+        setIsDeletePopupOpen(!isDeletePopupOpen);
+    };
+
     // const [genderFilter, setGenderFilter] = useState('');
     const [sizeFilter, setSizeFilter] = useState('');
     const [colorFilter, setcolorFilter] = useState('');
@@ -85,9 +93,21 @@ const AllProducts = () => {
     };
 
     const handleDelete = (id) => {
+        toggleDeletePopup();
+
         // Add your delete logic here
         console.log('Delete product with id:', id);
+        // deleteDoc(doc(firestore, 'clothes', id));
+        // show alert
+        setChosenDeleteId(id);
+    };
+
+    const confirmDelete = (id) => {
         deleteDoc(doc(firestore, 'clothes', id));
+        setChosenDeleteId('');
+        console.log('Delete product with id:', id);
+
+        toggleDeletePopup();
     };
 
     useEffect(() => {
@@ -203,7 +223,7 @@ const AllProducts = () => {
                                 <option value="Đỏ">Đỏ</option>
                                 <option value="Trằng">Trắng</option>
                                 <option value="Kem">Kem</option>
-                                <option value="Đỏ">Đỏ</option>
+                                <option value="Đen">Đen</option>
                                 <option value="Hồng">Hồng</option>
                                 <option value="Váy Hoa">Váy Hoa</option>
                                 <option value="Vàng">Vàng</option>
@@ -221,8 +241,8 @@ const AllProducts = () => {
                             <td>{cloth.Brand}</td>
                             <td>{cloth.Color}</td>
                             <td>{cloth.Type}</td>
-                            <td>{cloth.RentalFee} đồng</td>
                             <td>{cloth.Deposit} đồng</td>
+                            <td>{cloth.RentalFee} đồng</td>
                             <td>{cloth.Size}</td>
                             {/* <td>{cloth.Gender}</td> */}
                             <td>
@@ -254,7 +274,7 @@ const AllProducts = () => {
                             <option value="Đỏ">Đỏ</option>
                             <option value="Trằng">Trắng</option>
                             <option value="Kem">Kem</option>
-                            <option value="Đỏ">Đỏ</option>
+                            <option value="Đen">Đen</option>
                             <option value="Hồng">Hồng</option>
                             <option value="Váy Hoa">Váy Hoa</option>
                             <option value="Vàng">Vàng</option>
@@ -282,6 +302,15 @@ const AllProducts = () => {
                     </form>
                 )}
             </Modal>
+            {isDeletePopupOpen && (
+                <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div style={{ backgroundColor: 'white', padding: 20, borderRadius: 5, boxShadow: '0 0 10px rgba(0, 0, 0, 0.3)' }}>
+                        <h2>Xác nhận xóa</h2>
+                        <button onClick={() => confirmDelete(chosenDeleteId)}>Xóa</button>
+                        <button onClick={toggleDeletePopup}>Đóng</button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

@@ -29,7 +29,7 @@ const Item = ({ onImageChange, onInputChange, item }) => {
                     <option value="Đỏ">Đỏ</option>
                     <option value="Trằng">Trắng</option>
                     <option value="Kem">Kem</option>
-                    <option value="Đỏ">Đỏ</option>
+                    <option value="Đen">Đen</option>
                     <option value="Hồng">Hồng</option>
                     <option value="Váy Hoa">Váy Hoa</option>
                     <option value="Vàng">Vàng</option>
